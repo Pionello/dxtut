@@ -5,7 +5,16 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	LPSTR lpCmdLine,
 	int nCmdShow)
 {
-	MessageBox(NULL, L"Alert!", L"Window header", MB_ICONEXCLAMATION | MB_OK);
+	/* MessageBox prototype:
+	int MessageBox(HWND hWnd,
+		LPCTSTR lptext,
+		LPCTSTR lpcaption,
+		UINT utype); */
+
+	MessageBox(NULL, // NULL - message comes from desktop, not any window
+		L"R u happy?", 
+		L"Main quest", 
+		MB_ICONINFORMATION | MB_YESNO);
 	return 0;
 }
 
