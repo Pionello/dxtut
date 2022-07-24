@@ -11,10 +11,20 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		LPCTSTR lpcaption,
 		UINT utype); */
 
-	MessageBox(NULL, // NULL - message comes from desktop, not any window
-		L"R u happy?", 
+	int test = MessageBox(NULL, // NULL - message comes from desktop, not any window
+		L"Go?", 
 		L"Main quest", 
 		MB_ICONINFORMATION | MB_YESNO);
+
+	switch (test) 
+	{
+		case (IDYES):MessageBox(NULL,
+			L"GO",
+			L"Info",
+			MB_ICONEXCLAMATION | MB_OK);
+			break;
+		default: break;
+	}
 	return 0;
 }
 
