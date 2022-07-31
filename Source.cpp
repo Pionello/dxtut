@@ -1,30 +1,23 @@
 #include <windows.h>
 
-int WINAPI WinMain(HINSTANCE hInstance,
-	HINSTANCE hPrevInstance,
-	LPSTR lpCmdLine,
-	int nCmdShow)
+int WINAPI WinMain(HINSTANCE hInstance, // process id
+	HINSTANCE hPrevInstance, // prev process id
+	LPSTR lpCmdLine, // additional launch parameters like "spore.exe -treeCreator"
+	int nCmdShow) // how to show the window (min/max active/inactive hide(background working)/show)
 {
 	/* MessageBox prototype:
-	int MessageBox(HWND hWnd,
-		LPCTSTR lptext,
-		LPCTSTR lpcaption,
-		UINT utype); */
+	int MessageBox(HWND hWnd, // app id (guess it's hInstance)
+		LPCTSTR lptext,       // message text
+		LPCTSTR lpcaption,    // message header
+		UINT utype); */       // answer buttons for user
 
-	int test = MessageBox(NULL, // NULL - message comes from desktop, not any window
-		L"Go?", 
-		L"Main quest", 
-		MB_ICONINFORMATION | MB_YESNO);
+	int a = MessageBox(NULL, // NULL - message comes from desktop, not any window
+		L"Not Hello World!",
+		L"The error",
+		MB_ICONERROR | MB_OK);
 
-	switch (test) 
-	{
-		case (IDYES):MessageBox(NULL,
-			L"GO",
-			L"Info",
-			MB_ICONEXCLAMATION | MB_OK);
-			break;
-		default: break;
-	}
+
+
 	return 0;
 }
 
