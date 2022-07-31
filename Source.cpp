@@ -28,7 +28,9 @@ int WINAPI WinMain(HINSTANCE hInstance, // process handle
 	RegisterClassEx(&wc);
 
 	RECT wr = {0, 0, 500, 400}; // { widthStart, heightStart, widthFinish, heightFinish }
-	AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
+	AdjustWindowRect(&wr,
+		WS_OVERLAPPEDWINDOW, 
+		FALSE);
 
 	// Create a window of "wc" class 
 	HWND hWnd = CreateWindowEx(NULL,   // win extended style
@@ -48,11 +50,20 @@ int WINAPI WinMain(HINSTANCE hInstance, // process handle
 	ShowWindow(hWnd, nCmdShow);
 
 	// The main loop shows window until we close it:
-	MSG msg;
-	while (GetMessage(&msg, NULL, 0, 0)) 
+	MSG msg = {0};
+	while (true) 
 	{
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) 
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+
+			if (msg.message == WM_QUIT) break;
+		}
+		else 
+		{
+			// the main code of game/application
+		}
 
 	}
 
@@ -109,4 +120,12 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	BOOL AdjustWindowRect(LPRECT lpRect, // rect with its size: { widthStart, heightStart, widthFinish, heightFinish }
                       DWORD dwStyle,	 // winstyle
                       BOOL bMenu);		 // using any menus
+*/
+
+/*
+* BOOL PeekMessage(LPMSG lpMsg, 
+                 HWND hWnd,
+                 UINT wMsgFilterMin,
+                 UINT wMsgFilterMax,
+                 UINT wRemoveMsg);
 */
