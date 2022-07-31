@@ -27,6 +27,9 @@ int WINAPI WinMain(HINSTANCE hInstance, // process handle
 
 	RegisterClassEx(&wc);
 
+	RECT wr = {0, 0, 500, 400}; // { widthStart, heightStart, widthFinish, heightFinish }
+	AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
+
 	// Create a window of "wc" class 
 	HWND hWnd = CreateWindowEx(NULL,   // win extended style
 		wc.lpszClassName,              // win class; should be L"11A"
@@ -34,8 +37,8 @@ int WINAPI WinMain(HINSTANCE hInstance, // process handle
 		WS_OVERLAPPEDWINDOW,           // win style
 		200,						   // win position X
 		100,						   // win position Y
-		900,					       // win width
-		600,						   // win height
+		wr.right - wr.left,					       // win width
+		wr.bottom - wr.top,						   // win height
 		NULL,						   // parent window (none)
 		NULL,						   // any menus (no)
 		hInstance,					   // win process handle
@@ -100,4 +103,10 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     HINSTANCE hInstance,	  // win process handle (Handle to the instance of the module to be associated with the window)
     LPVOID lpParam);		  // Long pointer to a value to be passed to the window through the CREATESTRUCT structure 
 							  // ...passed in the lParam parameter the WM_CREATE message.
+*/
+
+/*
+	BOOL AdjustWindowRect(LPRECT lpRect, // rect with its size: { widthStart, heightStart, widthFinish, heightFinish }
+                      DWORD dwStyle,	 // winstyle
+                      BOOL bMenu);		 // using any menus
 */
