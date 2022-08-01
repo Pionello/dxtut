@@ -1,5 +1,19 @@
 #include <windows.h>
 #include <windowsx.h>
+#include <d3d11.h>
+#include <d3dx11.h>
+#include <d3dx10.h>
+
+#pragma comment (lib, "d3d11.lib")
+#pragma comment (lib, "d3dx11.lib")
+#pragma comment (lib, "d3dx10.lib")
+
+IDXGISwapChain* swapchain;		// pointer to swapchain interface
+ID3D11Device* dev;				// pointer to device interface
+ID3D11DeviceContext* devcon;	// pointer to device context
+
+void InitD3D(HWND hWnd);	// Direct3D setup & initialization
+void CleanD3D(void);		// Direct3D closing and memory release
 
 LRESULT CALLBACK WinProc(HWND hWnd, 
 	UINT message, 
@@ -35,7 +49,7 @@ int WINAPI WinMain(HINSTANCE hInstance, // process handle
 	// Create a window of "wc" class 
 	HWND hWnd = CreateWindowEx(NULL,   // win extended style
 		wc.lpszClassName,              // win class; should be L"11A"
-		L"My Window (just winapi so far)",                // win header
+		L"My DxWindow",                // win header
 		WS_OVERLAPPEDWINDOW,           // win style
 		200,						   // win position X
 		100,						   // win position Y
@@ -46,8 +60,10 @@ int WINAPI WinMain(HINSTANCE hInstance, // process handle
 		hInstance,					   // win process handle
 		NULL);						   // multiple windows (no)
 
+	InitD3D(hWnd);
 	// Show the window
 	ShowWindow(hWnd, nCmdShow);
+	
 
 	// The main loop shows window until we close it:
 	MSG msg = {0};
@@ -67,7 +83,41 @@ int WINAPI WinMain(HINSTANCE hInstance, // process handle
 
 	}
 
+	CleanD3D();
 	return msg.wParam;
+}
+
+void InitD3D(HWND hWnd) 
+{
+	DXGI_SWAP_CHAIN_DESC scd;
+	ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
+
+	scd.BufferCount = 1;								// one back buffer
+	scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // use 32-bit color
+	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;  // how to use swapchain
+	scd.OutputWindow = hWnd;							// the window
+	scd.SampleDesc.Count = 4;							// how many multisamples (up to 4 supported)
+	scd.Windowed = true;								// windowed mode
+
+	D3D11CreateDeviceAndSwapChain(NULL,
+		D3D_DRIVER_TYPE_HARDWARE,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		D3D11_SDK_VERSION,
+		&scd,
+		&swapchain,
+		&dev,
+		NULL,
+		&devcon);
+}
+
+void CleanD3D()
+{
+	swapchain->Release();
+	dev->Release();
+	devcon->Release();
 }
 
 LRESULT CALLBACK WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
@@ -128,4 +178,20 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                  UINT wMsgFilterMin,
                  UINT wMsgFilterMax,
                  UINT wRemoveMsg);
+*/
+
+/*
+* HRESULT D3D11CreateDeviceAndSwapChain(
+    IDXGIAdapter *pAdapter,
+    D3D_DRIVER_TYPE DriverType,
+    HMODULE Software,
+    UINT Flags,
+    D3D_FEATURE_LEVEL *pFeatureLevels,
+    UINT FeatureLevels,
+    UINT SDKVersion,
+    DXGI_SWAP_CHAIN_DESC *pSwapChainDesc,
+    IDXGISwapChain **ppSwapChain,
+    ID3D11Device **ppDevice,
+    D3D_FEATURE_LEVEL *pFeatureLevel,
+    ID3D11DeviceContext **ppDeviceContext);
 */
