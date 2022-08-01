@@ -8,12 +8,18 @@
 #pragma comment (lib, "d3dx11.lib")
 #pragma comment (lib, "d3dx10.lib")
 
+CONST int C_WIDTH = 500;
+CONST int C_HEIGHT = 400;
+
+
 IDXGISwapChain* swapchain;		// pointer to swapchain interface
 ID3D11Device* dev;				// pointer to device interface
 ID3D11DeviceContext* devcon;	// pointer to device context
+ID3D11RenderTargetView* backbuffer; // pointer to back buffer (swapchain of front- & back- buffers)
 
 void InitD3D(HWND hWnd);	// Direct3D setup & initialization
 void CleanD3D(void);		// Direct3D closing and memory release
+void RenderFrame(void);
 
 LRESULT CALLBACK WinProc(HWND hWnd, 
 	UINT message, 
@@ -41,7 +47,7 @@ int WINAPI WinMain(HINSTANCE hInstance, // process handle
 
 	RegisterClassEx(&wc);
 
-	RECT wr = {0, 0, 500, 400}; // { widthStart, heightStart, widthFinish, heightFinish }
+	RECT wr = {0, 0, C_WIDTH, C_HEIGHT}; // { widthStart, heightStart, widthFinish, heightFinish }
 	AdjustWindowRect(&wr,
 		WS_OVERLAPPEDWINDOW, 
 		FALSE);
@@ -78,6 +84,7 @@ int WINAPI WinMain(HINSTANCE hInstance, // process handle
 		}
 		else 
 		{
+			RenderFrame();
 			// the main code of game/application
 		}
 
@@ -89,6 +96,7 @@ int WINAPI WinMain(HINSTANCE hInstance, // process handle
 
 void InitD3D(HWND hWnd) 
 {
+	// initialization itself
 	DXGI_SWAP_CHAIN_DESC scd;
 	ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
 
@@ -102,7 +110,7 @@ void InitD3D(HWND hWnd)
 	D3D11CreateDeviceAndSwapChain(NULL,
 		D3D_DRIVER_TYPE_HARDWARE,
 		NULL,
-		NULL,
+		NULL,//D3D11_CREATE_DEVICE_DEBUG,
 		NULL,
 		NULL,
 		D3D11_SDK_VERSION,
@@ -111,13 +119,45 @@ void InitD3D(HWND hWnd)
 		&dev,
 		NULL,
 		&devcon);
+
+	// backbuffer works (setting the render target)
+	ID3D11Texture2D* pBackBuffer;
+	swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer); // get the address of backbuffer
+
+	dev->CreateRenderTargetView(pBackBuffer, NULL, &backbuffer); // create render target on backbuffer address
+	pBackBuffer->Release();
+
+	devcon->OMSetRenderTargets(1, &backbuffer, NULL); // setting the render target as backbuffer
+
+	// setting the viewport
+	D3D11_VIEWPORT viewport;
+	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
+
+	viewport.TopLeftX = 0;
+	viewport.TopLeftY = 0;
+	viewport.Width = C_WIDTH;
+	viewport.Height = C_HEIGHT;
+
+	devcon->RSSetViewports(1, &viewport);
+
+
 }
 
 void CleanD3D()
 {
 	swapchain->Release();
+	backbuffer->Release();
 	dev->Release();
 	devcon->Release();
+}
+
+void RenderFrame() 
+{
+	devcon->ClearRenderTargetView(backbuffer, D3DXCOLOR(0.2f, 0.5f, 0.2f, 1.0f));
+
+	// do 3D stuff here
+
+	swapchain->Present(0, 0);
 }
 
 LRESULT CALLBACK WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
