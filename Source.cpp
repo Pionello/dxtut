@@ -10,13 +10,13 @@
 #pragma comment (lib, "d3dx11.lib")
 #pragma comment (lib, "d3dx10.lib")
 
-CONST int C_WIDTH = 500;
-CONST int C_HEIGHT = 400;
+CONST int C_WIDTH = 1280;
+CONST int C_HEIGHT = 768;
 CONST LPCTSTR C_APPNAME = L"DXTUT";
 
 float red = 0.0f;
-float green = 0.0f;
-float blue = 0.0f;
+float green = 0.2f;
+float blue = 1.0f;
 int colorCondition = 1; // delete it later
 
 
@@ -49,7 +49,7 @@ int WINAPI WinMain(HINSTANCE hInstance, // process handle
 	WinClass.lpfnWndProc = WinProc;
 	WinClass.hInstance = hInstance;
 	WinClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-	WinClass.hbrBackground = (HBRUSH)(COLOR_WINDOW - 2);
+	//WinClass.hbrBackground = (HBRUSH)COLOR_WINDOW;
 	//(HBRUSH)GetStockObject(BLACK_BRUSH); // - to black BG
 	//COLOR_WINDOW;						   // - to white BG
 	WinClass.lpszClassName = L"11A";
@@ -100,45 +100,16 @@ int WINAPI WinMain(HINSTANCE hInstance, // process handle
 			{
 				case 1: 
 				{
-					green += 0.1f;
-					blue += 0.05f;
-
-					if (green >= 1.0f) colorCondition = 2;
+					blue -= 0.05f;
+					green -= 0.05f;
+					if (blue <= 0.0f) colorCondition = 2;
 					break;
 				}
 				case 2:
 				{
-					green -= 0.1f;
-					blue -= 0.05f;
-					if (green <= 0.0f) colorCondition = 3;
-					break;
-				}
-				case 3:
-				{
-					red += 0.1f;
+					blue += 0.05f;
 					green += 0.05f;
-					if (red >= 1.0f) colorCondition = 4;
-					break;
-				}
-				case 4: 
-				{
-					red -= 0.1f;
-					green -= 0.05f;
-					if (red <= 0.0f) colorCondition = 5;
-					break;
-				}
-				case 5:
-				{
-					blue += 0.1f;
-					green += 0.05f;
-					if (blue >= 1.0f) colorCondition = 6;
-					break;
-				}
-				case 6:
-				{
-					blue -= 0.1f;
-					green -= 0.05f;
-					if (blue <= 0.0f) colorCondition = 1;
+					if (blue >= 1.0f) colorCondition = 1;
 					break;
 				}
 				default:
@@ -165,11 +136,14 @@ void InitD3D(HWND hWnd)
 
 	scd.BufferCount = 1;								// one back buffer
 	scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // use 32-bit color
+	scd.BufferDesc.Width = C_WIDTH;						// set required width to the swapchain
+	scd.BufferDesc.Height = C_HEIGHT;					// set required height to the swapchain
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;  // how to use swapchain
 	scd.OutputWindow = hWnd;							// the window
 	scd.SampleDesc.Count = 4;							// how many multisamples (up to 4 supported)
-	scd.Windowed = true;								// windowed mode
-	scd.Flags = D3D11_CREATE_DEVICE_DEBUG;				// debug mode on
+	scd.SampleDesc.Quality = 0;
+	scd.Windowed = false;								// windowed mode
+	scd.Flags = D3D11_CREATE_DEVICE_DEBUG | DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;// debug mode on, alt+enter fullscreen swap 
 
 	D3D11CreateDeviceAndSwapChain(NULL,
 		D3D_DRIVER_TYPE_HARDWARE,
@@ -212,6 +186,7 @@ void InitD3D(HWND hWnd)
 
 void CleanD3D()
 {
+	swapchain->SetFullscreenState(false,NULL); // switch to windowed mode
 	swapchain->Release();
 	backbuffer->Release();
 	dev->Release();
