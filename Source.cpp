@@ -1,5 +1,7 @@
 #include <windows.h>
 #include <windowsx.h>
+#include <stdio.h>
+
 #include <d3d11.h>
 #include <d3dx11.h>
 #include <d3dx10.h>
@@ -10,15 +12,22 @@
 
 CONST int C_WIDTH = 500;
 CONST int C_HEIGHT = 400;
+CONST LPCTSTR C_APPNAME = L"DXTUT";
+
+float red = 0.0f;
+float green = 0.0f;
+float blue = 0.0f;
+int colorCondition = 1; // delete it later
 
 
-IDXGISwapChain* swapchain;		// pointer to swapchain interface
-ID3D11Device* dev;				// pointer to device interface
-ID3D11DeviceContext* devcon;	// pointer to device context
+
+IDXGISwapChain* swapchain;			// pointer to swapchain interface
+ID3D11Device* dev;					// pointer to device interface
+ID3D11DeviceContext* devcon;		// pointer to device context
 ID3D11RenderTargetView* backbuffer; // pointer to back buffer (swapchain of front- & back- buffers)
 
-void InitD3D(HWND hWnd);	// Direct3D setup & initialization
-void CleanD3D(void);		// Direct3D closing and memory release
+void InitD3D(HWND hWnd);			// Direct3D setup & initialization
+void CleanD3D(void);				// Direct3D closing and memory release
 void RenderFrame(void);
 
 LRESULT CALLBACK WinProc(HWND hWnd, 
@@ -32,49 +41,51 @@ int WINAPI WinMain(HINSTANCE hInstance, // process handle
 	int nCmdShow)						// how to show the window (min/max active/inactive hide(background working)/show)
 {
 	// Create window class
-	WNDCLASSEX wc;
-	ZeroMemory(&wc, sizeof(WNDCLASSEX));
+	WNDCLASSEX WinClass;
+	ZeroMemory(&WinClass, sizeof(WNDCLASSEX));
 
-	wc.cbSize = sizeof(WNDCLASSEX);
-	wc.style = CS_HREDRAW | CS_VREDRAW;
-	wc.lpfnWndProc = WinProc;
-	wc.hInstance = hInstance;
-	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW - 2);
+	WinClass.cbSize = sizeof(WNDCLASSEX);
+	WinClass.style = CS_HREDRAW | CS_VREDRAW;
+	WinClass.lpfnWndProc = WinProc;
+	WinClass.hInstance = hInstance;
+	WinClass.hCursor = LoadCursor(NULL, IDC_ARROW);
+	WinClass.hbrBackground = (HBRUSH)(COLOR_WINDOW - 2);
 	//(HBRUSH)GetStockObject(BLACK_BRUSH); // - to black BG
 	//COLOR_WINDOW;						   // - to white BG
-	wc.lpszClassName = L"11A";
+	WinClass.lpszClassName = L"11A";
 
-	RegisterClassEx(&wc);
+	RegisterClassEx(&WinClass);
 
-	RECT wr = {0, 0, C_WIDTH, C_HEIGHT}; // { widthStart, heightStart, widthFinish, heightFinish }
-	AdjustWindowRect(&wr,
+	RECT WinRect = {0, 0, C_WIDTH, C_HEIGHT}; // { widthStart, heightStart, widthFinish, heightFinish }
+	AdjustWindowRect(&WinRect,
 		WS_OVERLAPPEDWINDOW, 
 		FALSE);
 
 	// Create a window of "wc" class 
 	HWND hWnd = CreateWindowEx(NULL,   // win extended style
-		wc.lpszClassName,              // win class; should be L"11A"
-		L"My DxWindow",                // win header
+		WinClass.lpszClassName,        // win class; should be L"11A"
+		C_APPNAME,					   // win header
 		WS_OVERLAPPEDWINDOW,           // win style
 		200,						   // win position X
 		100,						   // win position Y
-		wr.right - wr.left,					       // win width
-		wr.bottom - wr.top,						   // win height
+		WinRect.right - WinRect.left,  // win width
+		WinRect.bottom - WinRect.top,  // win height
 		NULL,						   // parent window (none)
 		NULL,						   // any menus (no)
 		hInstance,					   // win process handle
 		NULL);						   // multiple windows (no)
 
 	InitD3D(hWnd);
-	// Show the window
+
 	ShowWindow(hWnd, nCmdShow);
 	
-
 	// The main loop shows window until we close it:
 	MSG msg = {0};
+
+	
 	while (true) 
 	{
+		
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) 
 		{
 			TranslateMessage(&msg);
@@ -84,6 +95,58 @@ int WINAPI WinMain(HINSTANCE hInstance, // process handle
 		}
 		else 
 		{
+			// main app code
+			switch (colorCondition) 
+			{
+				case 1: 
+				{
+					green += 0.1f;
+					blue += 0.05f;
+
+					if (green >= 1.0f) colorCondition = 2;
+					break;
+				}
+				case 2:
+				{
+					green -= 0.1f;
+					blue -= 0.05f;
+					if (green <= 0.0f) colorCondition = 3;
+					break;
+				}
+				case 3:
+				{
+					red += 0.1f;
+					green += 0.05f;
+					if (red >= 1.0f) colorCondition = 4;
+					break;
+				}
+				case 4: 
+				{
+					red -= 0.1f;
+					green -= 0.05f;
+					if (red <= 0.0f) colorCondition = 5;
+					break;
+				}
+				case 5:
+				{
+					blue += 0.1f;
+					green += 0.05f;
+					if (blue >= 1.0f) colorCondition = 6;
+					break;
+				}
+				case 6:
+				{
+					blue -= 0.1f;
+					green -= 0.05f;
+					if (blue <= 0.0f) colorCondition = 1;
+					break;
+				}
+				default:
+				{
+					break;
+				}
+			}
+			Sleep(50);
 			RenderFrame();
 			// the main code of game/application
 		}
@@ -106,11 +169,12 @@ void InitD3D(HWND hWnd)
 	scd.OutputWindow = hWnd;							// the window
 	scd.SampleDesc.Count = 4;							// how many multisamples (up to 4 supported)
 	scd.Windowed = true;								// windowed mode
+	scd.Flags = D3D11_CREATE_DEVICE_DEBUG;				// debug mode on
 
 	D3D11CreateDeviceAndSwapChain(NULL,
 		D3D_DRIVER_TYPE_HARDWARE,
 		NULL,
-		NULL,//D3D11_CREATE_DEVICE_DEBUG,
+		scd.Flags,//D3D11_CREATE_DEVICE_DEBUG,
 		NULL,
 		NULL,
 		D3D11_SDK_VERSION,
@@ -122,12 +186,15 @@ void InitD3D(HWND hWnd)
 
 	// backbuffer works (setting the render target)
 	ID3D11Texture2D* pBackBuffer;
-	swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer); // get the address of backbuffer
+	swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer); // get certain (number 0 this case) 
+																								 // backbuffer from swapchain and 
+																								 // create ID3DTexture2D* using the buffer 
 
-	dev->CreateRenderTargetView(pBackBuffer, NULL, &backbuffer); // create render target on backbuffer address
-	pBackBuffer->Release();
+	dev->CreateRenderTargetView(pBackBuffer, NULL, &backbuffer);			 // put ID3DTexture2D* (pBackBuffer) 
+																								 // to the backbuffer exactly
+	pBackBuffer->Release(); // like for any COM object, release ID3D11Texture2D*
 
-	devcon->OMSetRenderTargets(1, &backbuffer, NULL); // setting the render target as backbuffer
+	devcon->OMSetRenderTargets(1, &backbuffer, NULL);		 // set the render target as backbuffer
 
 	// setting the viewport
 	D3D11_VIEWPORT viewport;
@@ -153,11 +220,12 @@ void CleanD3D()
 
 void RenderFrame() 
 {
-	devcon->ClearRenderTargetView(backbuffer, D3DXCOLOR(0.2f, 0.5f, 0.2f, 1.0f));
+	// clear backbuffer and fill it with a color
+	devcon->ClearRenderTargetView(backbuffer, D3DXCOLOR(red, green, blue, 1.0f));
 
 	// do 3D stuff here
 
-	swapchain->Present(0, 0);
+	swapchain->Present(0, 0); // switch back n front buffers
 }
 
 LRESULT CALLBACK WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
@@ -175,6 +243,8 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
+
+// methods description
 /*
 * int WINAPI WinMain(HINSTANCE hInstance, // process handle
 	HINSTANCE hPrevInstance,		      // prev process handle
