@@ -10,14 +10,15 @@
 #pragma comment (lib, "d3dx11.lib")
 #pragma comment (lib, "d3dx10.lib")
 
-CONST int C_WIDTH = 1280;
+CONST int C_WIDTH = 1024;
 CONST int C_HEIGHT = 768;
 CONST LPCTSTR C_APPNAME = L"DXTUT";
 
-float red = 0.0f;
-float green = 0.2f;
-float blue = 1.0f;
+float red =   0.0f;
+float green = 0.1f;
+float blue =  0.2f;
 int colorCondition = 1; // delete it later
+int VerticiesValue = 0;
 
 
 
@@ -25,15 +26,42 @@ IDXGISwapChain* swapchain;			// pointer to swapchain interface
 ID3D11Device* dev;					// pointer to device interface
 ID3D11DeviceContext* devcon;		// pointer to device context
 ID3D11RenderTargetView* backbuffer; // pointer to back buffer (swapchain of front- & back- buffers)
+ID3D11VertexShader* pVS;
+ID3D11PixelShader* pPS;
+ID3D11Buffer* pVBuffer;
+ID3D11InputLayout* pLayout;
 
 void InitD3D(HWND hWnd);			// Direct3D setup & initialization
 void CleanD3D(void);				// Direct3D closing and memory release
 void RenderFrame(void);
+void InitGraphics(void);
+void InitPipeline(void);
+
 
 LRESULT CALLBACK WinProc(HWND hWnd, 
 	UINT message, 
 	WPARAM wParam, 
 	LPARAM lParam);
+
+HRESULT D3DX11CompileFromFile(
+	LPCTSTR pSrcFile,
+	D3D10_SHADER_MACRO* pDefines,
+	LPD3D10INCLUDE pInclude,
+	LPCSTR pFunctionName,
+	LPCSTR pProfile,
+	UINT Flags1,
+	UINT Flags2,
+	ID3DX11ThreadPump* pPump,
+	ID3D10Blob** ppShader,
+	ID3D10Blob** ppErrorMessages,
+	HRESULT* pHResult
+);
+
+struct VERTEX 
+{
+	FLOAT X, Y, Z;
+	D3DXCOLOR Color;
+};
 
 int WINAPI WinMain(HINSTANCE hInstance, // process handle
 	HINSTANCE hPrevInstance,		    // prev process handle
@@ -94,30 +122,7 @@ int WINAPI WinMain(HINSTANCE hInstance, // process handle
 			if (msg.message == WM_QUIT) break;
 		}
 		else 
-		{
-			// main app code
-			switch (colorCondition) 
-			{
-				case 1: 
-				{
-					blue -= 0.05f;
-					green -= 0.05f;
-					if (blue <= 0.0f) colorCondition = 2;
-					break;
-				}
-				case 2:
-				{
-					blue += 0.05f;
-					green += 0.05f;
-					if (blue >= 1.0f) colorCondition = 1;
-					break;
-				}
-				default:
-				{
-					break;
-				}
-			}
-			Sleep(50);
+		{	
 			RenderFrame();
 			// the main code of game/application
 		}
@@ -142,7 +147,7 @@ void InitD3D(HWND hWnd)
 	scd.OutputWindow = hWnd;							// the window
 	scd.SampleDesc.Count = 4;							// how many multisamples (up to 4 supported)
 	scd.SampleDesc.Quality = 0;
-	scd.Windowed = false;								// windowed mode
+	scd.Windowed = true;								// windowed mode
 	scd.Flags = D3D11_CREATE_DEVICE_DEBUG | DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;// debug mode on, alt+enter fullscreen swap 
 
 	D3D11CreateDeviceAndSwapChain(NULL,
@@ -180,12 +185,16 @@ void InitD3D(HWND hWnd)
 	viewport.Height = C_HEIGHT;
 
 	devcon->RSSetViewports(1, &viewport);
-
-
+	InitPipeline();
+	InitGraphics();
 }
 
 void CleanD3D()
 {
+	
+	pVS->Release();
+	pPS->Release();
+	pLayout->Release();
 	swapchain->SetFullscreenState(false,NULL); // switch to windowed mode
 	swapchain->Release();
 	backbuffer->Release();
@@ -198,9 +207,105 @@ void RenderFrame()
 	// clear backbuffer and fill it with a color
 	devcon->ClearRenderTargetView(backbuffer, D3DXCOLOR(red, green, blue, 1.0f));
 
-	// do 3D stuff here
+	
+	switch (colorCondition)
+	{
+		case 1:
+		{
+			blue -= 0.05f;
+			green -= 0.05f;
+			if (green <= 0.0f) colorCondition = 2;
+			break;
+		}
+		case 2:
+		{
+			blue += 0.05f;
+			green += 0.05f;
+			if (green >= 0.5f) colorCondition = 1;
+			break;
+		}
+		default:
+		{
+			break;
+		}
+	}
+	
+	Sleep(50);
+	
 
+	UINT stride = sizeof(VERTEX);
+	UINT offset = 0;
+	devcon->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
+
+	devcon->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+	devcon->Draw(VerticiesValue, 0);
+
+	// do 3D stuff here
+	
 	swapchain->Present(0, 0); // switch back n front buffers
+}
+
+void InitPipeline()
+{
+	// load & compile shaders
+	ID3D10Blob* VS, * PS;
+	D3DX11CompileFromFileA("shaders.shader", 0, 0, "VShader", "vs_4_0", 0, 0, 0, &VS, 0, 0);
+	D3DX11CompileFromFileA("shaders.shader", 0, 0, "PShader", "ps_4_0", 0, 0, 0, &PS, 0, 0);
+
+	// encapsulate shaders into shader objects
+	dev->CreateVertexShader(VS->GetBufferPointer(), VS->GetBufferSize(), NULL, &pVS);
+	dev->CreatePixelShader (PS->GetBufferPointer(), PS->GetBufferSize(), NULL, &pPS);
+
+	// set shader objects
+	devcon->VSSetShader(pVS, 0 ,0);
+	devcon->PSSetShader(pPS, 0, 0);
+
+	// input layout object
+	D3D11_INPUT_ELEMENT_DESC ied[] = 
+	{
+		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
+	};
+
+	dev->CreateInputLayout(ied, 2, VS->GetBufferPointer(), VS->GetBufferSize(), &pLayout);
+	devcon->IASetInputLayout(pLayout);
+}
+
+void InitGraphics() 
+{
+	//VERTEX JustVertex = { 0.0f, 0.5f, 0.0f, D3DXCOLOR(1.0f, 0.0f, 0.0f, 1.0f) };
+
+	VERTEX VertexArray[] =
+	{
+		{-0.5f, -0.5f, 0.0f, D3DXCOLOR(0.0f, 1.0f, 1.0f, 1.0f)},
+		{-0.5f,  0.5f, 0.0f, D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f)},
+		{ 0.5f,  0.5f, 0.0f, D3DXCOLOR(0.5f, 1.0f, 0.0f, 1.0f)},
+		{ 0.5f,  0.5f, 0.0f, D3DXCOLOR(0.5f, 1.0f, 0.0f, 1.0f)},
+		{-0.5f, -0.5f, 0.0f, D3DXCOLOR(0.0f, 1.0f, 1.0f, 1.0f)},
+		{ 0.5f, -0.5f, 0.0f, D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f)}
+		
+	};
+
+	VerticiesValue = sizeof(VertexArray) / sizeof(VertexArray[0]);
+
+	// buffer code
+	D3D11_BUFFER_DESC bd;
+	ZeroMemory(&bd, sizeof(D3D11_BUFFER_DESC));
+
+	bd.Usage = D3D11_USAGE_DYNAMIC;
+	bd.ByteWidth = sizeof(VERTEX) * VerticiesValue; // to check (3)
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	dev->CreateBuffer(&bd, NULL, &pVBuffer);
+
+	// buffer mapping
+	D3D11_MAPPED_SUBRESOURCE ms;
+	ZeroMemory(&ms, sizeof(D3D11_MAPPED_SUBRESOURCE)); // to check
+	devcon->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);
+	memcpy(ms.pData, VertexArray, sizeof(VertexArray));
+	devcon->Unmap(pVBuffer, NULL);
 }
 
 LRESULT CALLBACK WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
