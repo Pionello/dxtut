@@ -202,12 +202,8 @@ void CleanD3D()
 	devcon->Release();
 }
 
-void RenderFrame() 
+void ColorSwapping() 
 {
-	// clear backbuffer and fill it with a color
-	devcon->ClearRenderTargetView(backbuffer, D3DXCOLOR(red, green, blue, 1.0f));
-
-	
 	switch (colorCondition)
 	{
 		case 1:
@@ -229,19 +225,21 @@ void RenderFrame()
 			break;
 		}
 	}
-	
+}
+
+void RenderFrame() 
+{
+	// clear backbuffer and fill it with a color
+	devcon->ClearRenderTargetView(backbuffer, D3DXCOLOR(red, green, blue, 1.0f));
+
+	ColorSwapping();
 	Sleep(50);
-	
 
 	UINT stride = sizeof(VERTEX);
 	UINT offset = 0;
 	devcon->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
-
-	devcon->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
+	devcon->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	devcon->Draw(VerticiesValue, 0);
-
-	// do 3D stuff here
 	
 	swapchain->Present(0, 0); // switch back n front buffers
 }
@@ -278,12 +276,34 @@ void InitGraphics()
 
 	VERTEX VertexArray[] =
 	{
-		{-0.5f, -0.5f, 0.0f, D3DXCOLOR(0.0f, 1.0f, 1.0f, 1.0f)},
-		{-0.5f,  0.5f, 0.0f, D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f)},
-		{ 0.5f,  0.5f, 0.0f, D3DXCOLOR(0.5f, 1.0f, 0.0f, 1.0f)},
-		{ 0.5f,  0.5f, 0.0f, D3DXCOLOR(0.5f, 1.0f, 0.0f, 1.0f)},
-		{-0.5f, -0.5f, 0.0f, D3DXCOLOR(0.0f, 1.0f, 1.0f, 1.0f)},
-		{ 0.5f, -0.5f, 0.0f, D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f)}
+		{ 0.0f, -0.5f, 0.0f, D3DXCOLOR(0.0f, 1.0f, 1.0f, 1.0f)},
+		{ 0.0f,  0.5f, 0.0f, D3DXCOLOR(0.0f, 1.0f, 1.0f, 1.0f)},
+		{ 0.5f, -0.3f, 0.0f, D3DXCOLOR(0.0f, 1.0f, 1.0f, 1.0f)},
+
+		{ 0.5f, -0.3f, 0.0f, D3DXCOLOR(0.0f, 1.0f, 1.0f, 1.0f)},
+		{ 0.0f,  0.5f, 0.0f, D3DXCOLOR(0.0f, 1.0f, 1.0f, 1.0f)},
+		{ 0.5f,  0.6f, 0.0f, D3DXCOLOR(0.0f, 1.0f, 1.0f, 1.0f)},
+
+		{-0.5f, -0.3f, 0.0f, D3DXCOLOR(0.0f, 0.0f, 1.0f, 1.0f)},
+		{-0.5f,  0.6f, 0.0f, D3DXCOLOR(0.0f, 0.0f, 1.0f, 1.0f)},
+		{ 0.0f, -0.5f, 0.0f, D3DXCOLOR(0.0f, 0.0f, 1.0f, 1.0f)},
+
+		{ 0.0f, -0.5f, 0.0f, D3DXCOLOR(0.0f, 0.0f, 1.0f, 1.0f)},
+		{-0.5f,  0.6f, 0.0f, D3DXCOLOR(0.0f, 0.0f, 1.0f, 1.0f)},
+		{ 0.0f,  0.5f, 0.0f, D3DXCOLOR(0.0f, 0.0f, 1.0f, 1.0f)},
+
+		{ 0.0f,  0.4f, 0.0f, D3DXCOLOR(0.0f, 0.0f, 0.8f, 1.0f)},
+		{-0.5f,  0.6f, 0.0f, D3DXCOLOR(0.0f, 0.0f, 0.8f, 1.0f)},
+		{ 0.0f,  0.8f, 0.0f, D3DXCOLOR(0.0f, 0.0f, 0.8f, 1.0f)},
+
+		{ 0.0f,  0.8f, 0.0f, D3DXCOLOR(0.0f, 0.8f, 0.8f, 1.0f)},
+		{ 0.5f,  0.6f, 0.0f, D3DXCOLOR(0.0f, 0.8f, 0.8f, 1.0f)},
+		{ 0.0f,  0.4f, 0.0f, D3DXCOLOR(0.0f, 0.8f, 0.8f, 1.0f)}
+
+
+		//{ 0.5f,  0.5f, 0.0f, D3DXCOLOR(0.5f, 1.0f, 0.0f, 1.0f)},
+		//{-0.5f, -0.5f, 0.0f, D3DXCOLOR(0.0f, 1.0f, 1.0f, 1.0f)},
+		//{ 0.5f, -0.5f, 0.0f, D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f)}
 		
 	};
 
